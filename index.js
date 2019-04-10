@@ -5,7 +5,8 @@ const fs = require('fs-extra');
 var dateFormat = require('dateformat');
 const _ = require('underscore');
 const mkdirp = require('mkdirp');
-const callback = require('./index2.js')
+const callback = require('./index2.js');
+
 //const port = process.env.PORT || 3000;
 //app.listen(port, console.log('server up'));
 app.set('view engine', 'ejs');
@@ -44,12 +45,8 @@ request(allStocks, function (error, response, body) {
         }
 
     });
-    for (x = 0; x < 101; x++) {
+    for (x = 0; x < collection.length; x++) {
         count(collection[x]);
-
-
-
-
     }
 });
 function count(collection) {
@@ -82,18 +79,22 @@ function count(collection) {
 
             counter++;
             console.log(counter);
-            if (counter == 94) { starto() }
+            if (counter == 7553) { starto() }
 
             function starto() {
-                for (i in bigData) {
-                    console.log('Writing the file! ' + Object.keys(bigData)[i]);
-                    fs.writeFile(date + '/' + Object.keys(bigData)[i].charAt(0) +'/'+ bigData[i]+ '.json', JSON.stringify(bigData[i]), function (err) {
 
-                        console.log('file saved')
+                _.mapObject(bigData, function (val, key) {
+                    console.log('\t Writing the file! ' + key);
+                     fs.writeFile(date + '/' + key.charAt(0) +'/'+key+ '.json', val, function (err) {
+
+                        console.log('\t\t'+key+ 'file saved')
                         if (err) throw err;
 
-                    });
-                }
+                    }); 
+
+                })
+
+
             }
         }
 
