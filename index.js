@@ -111,6 +111,11 @@ request(allStocks, function (error, response, body) {
         count(collection.pop())
         if (collection.length == 0) {
             console.log(">>>>>>>>>>>>>ALL DONE!!!!<<<<<<<<<<<")
+            console.log("exit in 3 seconds")
+            setTimeout(()=>{
+                console.log("Buy")
+                process.exit()
+            }, 3)
             clearInterval(interval)
         }
     }, 100)
