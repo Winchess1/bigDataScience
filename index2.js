@@ -71,7 +71,9 @@ function count(collection) {
             var temp = symbol(collection);
             dirCheck(temp);
 
-            fileCreator(collection, temp, jsonFile);
+            var dirPath = path.join(date, temp, collection + '.json');
+            
+            fileCreator(dirPath,collection,jsonFile);
 
             counter++;
 
@@ -101,11 +103,11 @@ var dirCheck = function (fileSymbol) {
     } else (console.log(fileSymbol + ' Directory exist'))
 }
 //creating files
-var fileCreator = function (collection, temp, jsonFile) {
-    if (!(fs.existsSync(path.join(date, temp, collection + '.json')))) {
-        console.log(path.join(date, temp, collection + '.json'));
+var fileCreator = function (dirPath,collection,jsonFile) {
+    if (!(fs.existsSync(dirPath))) {
+        console.log(dirPath);
         console.log('\t Writing the file! ' + collection);
-        fs.writeFile(path.join(date, temp, collection + '.json'), JSON.stringify(jsonFile), function (err) {
+        fs.writeFile(dirPath, JSON.stringify(jsonFile), function (err) {
             console.log('\t\t' + collection + ' file saved')
             if (err) throw err;
 
