@@ -37,10 +37,13 @@ request(allStocks, function (error, res, body) {
         //Awesome timer for Arrays
         var interval = setInterval(function () {
             count(collection.pop());
-            if (collection.length == 0) {
-                clearInterval(interval);
+          
+            if (collection.length == 6000) {
+                
                 console.log('\ttask was done!');
                 console.log('\ttotal valid stocks = ' + counter)
+                clearInterval(interval);
+               
             }
         }, 50);
     } else console.log("Something wrong with API " + error)
@@ -71,7 +74,7 @@ function count(collection) {
             var temp = symbol(collection);
             dirCheck(temp);
 
-            var dirPath = path.join(date, temp, collection + '.json');
+            var dirPath = path.join('data',date, temp, collection + '.json');
             
             fileCreator(dirPath,collection,jsonFile);
 
@@ -95,7 +98,7 @@ var dirCheck = function (fileSymbol) {
 
     if (!(fs.existsSync(path.join(date, fileSymbol)))) {
 
-        mkdirp(path.join(date, fileSymbol), function (err) {
+        mkdirp(path.join('data',date, fileSymbol), function (err) {
             if (err) console.error(err)
             else console.log('\t\t' + fileSymbol + ' folder is created')
         });
@@ -107,11 +110,7 @@ var fileCreator = function (dirPath,collection,jsonFile) {
     if (!(fs.existsSync(dirPath))) {
         console.log(dirPath);
         console.log('\t Writing the file! ' + collection);
-        fs.writeFile(dirPath, JSON.stringify(jsonFile), function (err) {
-            console.log('\t\t' + collection + ' file saved')
-            if (err) throw err;
-
-        });
+       
 
     } else (console.log(collection + 'File exist'))
 
