@@ -81,7 +81,7 @@ function getListOfSymbols(pathDir) {
 }
 
 request(allStocks, function (error, response, body) {
-    savedSymbols = getListOfSymbols('data');
+    savedSymbols = getListOfSymbols(path.join('data', date));
     console.log("\tgrabbing and extracting the Stocks from API");
     collection = _.map(_.filter(body, function (data) {
 
