@@ -45,7 +45,7 @@ request(allStocks, function (error, res, body) {
                 clearInterval(interval);
                
             }
-        }, 50);
+        }, 100);
     } else console.log("Something wrong with API " + error)
 });
 
@@ -110,7 +110,12 @@ var fileCreator = function (dirPath,collection,jsonFile) {
     if (!(fs.existsSync(dirPath))) {
         console.log(dirPath);
         console.log('\t Writing the file! ' + collection);
-       
+        fs.writeFile(dirPath, JSON.stringify(jsonFile), function (err) {
+            console.log('\t\t' + collection + ' file saved')
+            if (err) throw err;
+
+        });
+
 
     } else (console.log(collection + 'File exist'))
 
