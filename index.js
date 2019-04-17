@@ -71,6 +71,9 @@ function getStockDir(symbol) {
 
 // helper function
 function getListOfSymbols(pathDir) {
+    if (!fs.existsSync(pathDir)){
+        return []
+    }
     let files = walkSync(pathDir)
     var ret = {}
     files.forEach((x) => {
