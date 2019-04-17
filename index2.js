@@ -38,7 +38,7 @@ request(allStocks, function (error, res, body) {
         var interval = setInterval(function () {
             count(collection.pop());
           
-            if (collection.length == 6000) {
+            if (collection.length == 0) {
                 
                 console.log('\ttask was done!');
                 console.log('\ttotal valid stocks = ' + counter)
@@ -71,7 +71,8 @@ function count(collection) {
                 jsonFile[key[i]] = data[i];
             }
 
-            var temp = symbol(collection);
+            var temp = path.join('data',date, symbol(collection))            
+           
             dirCheck(temp);
 
             var dirPath = path.join('data',date, temp, collection + '.json');
@@ -90,32 +91,32 @@ function count(collection) {
 //Symbol checker
 var symbol = function (symbolExtractor) {
     var symbolPath = symbolExtractor.charAt(0);
+    console.log("\t\t\t\t"+symbolPath);
     return symbolPath;
 }
 
 //creating a directories
-var dirCheck = function (fileSymbol) {
-
-    if (!(fs.existsSync(path.join(date, fileSymbol)))) {
-
-        mkdirp(path.join('data',date, fileSymbol), function (err) {
+var dirCheck = function (fileSymbol) {   
+    if (!(fs.existsSync(fileSymbol))) {
+        console.log('dirCheck '+fileSymbol);
+        fs.mkdirSync(fileSymbol, function (err) {
             if (err) console.error(err)
             else console.log('\t\t' + fileSymbol + ' folder is created')
         });
 
     } else (console.log(fileSymbol + ' Directory exist'))
 }
+
 //creating files
 var fileCreator = function (dirPath,collection,jsonFile) {
     if (!(fs.existsSync(dirPath))) {
-        console.log(dirPath);
+       
         console.log('\t Writing the file! ' + collection);
         fs.writeFile(dirPath, JSON.stringify(jsonFile), function (err) {
             console.log('\t\t' + collection + ' file saved')
             if (err) throw err;
 
         });
-
 
     } else (console.log(collection + 'File exist'))
 
