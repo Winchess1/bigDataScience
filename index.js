@@ -1,217 +1,110 @@
-const express = require('express');
-const app = express();
 const request = require('request');
 const fs = require('fs-extra');
 var dateFormat = require('dateformat');
 const _ = require('underscore');
 const mkdirp = require('mkdirp');
 const path = require('path');
-var walk = require('walk');
-// const callback = require('./index2.js');
-
-const port = process.env.PORT || 3000;
-app.listen(port, console.log('server up'));
-
-app.set('view engine', 'ejs');
-var date = dateFormat(new Date(), "yyyymmdd");
 const cheerio = require('cheerio');
+
+var date = dateFormat(new Date(), "yyyymmdd");
 var data = [];
 var key = [];
-var bigData = [];
-var counter = 0;
-
 const allStocks = {
     url: `https://api.iextrading.com/1.0/ref-data/symbols`,
     json: true,
     rejectUnauthorized: false,
     requestCert: true,
     agent: false
-};
-
-/*
-
-1 - request list of stockes
-2 - look at data in folder
-3 - exclude all that are loaded and stored in folders
-4 - load thouse who left
-
-*/
-
-
-// copy paste form https://gist.github.com/kethinov/6658166
-// List all files in a directory in Node.js recursively in a synchronous fashion
-var walkSync = function (dir, filelist) {
-    var path = path || require('path');
-    var fs = fs || require('fs'),
-        files = fs.readdirSync(dir);
-    filelist = filelist || [];
-    files.forEach(function (file) {
-        if (fs.statSync(path.join(dir, file)).isDirectory()) {
-            filelist = walkSync(path.join(dir, file), filelist);
-        }
-        else {
-            filelist.push(file);
-        }
-    });
-    return filelist;
-};
-// helper function
-function createIfNotExists(dir) {
-    if (!fs.existsSync(dir)) {
-        // mk dirs - make all dirs  
-        fs.mkdirsSync(dir);
-    }
 }
 
-// helper function
-function getStockDir(symbol) {
-    var letter = symbol[0].toLowerCase()
-    return path.join('data', date, letter);
-}
-
-// helper function
-function getListOfSymbols(pathDir) {
-    if (!fs.existsSync(pathDir)){
-        return []
-    }
-    let files = walkSync(pathDir)
-    var ret = {}
-    files.forEach((x) => {
-        let symbol = path.basename(x).split('.')[0]
-        ret[symbol] = true;
-    })
-    return ret;
-}
-
-request(allStocks, function (error, response, body) {
-    savedSymbols = getListOfSymbols(path.join('data', date));
-    console.log("\tgrabbing and extracting the Stocks from API");
-    collection = _.map(_.filter(body, function (data) {
-
-
-        return data['type'] !== 'et' && data['type'] !== 'N/A' && typeof(savedSymbols[data.symbol]) === "undefined";
-    }),
-        function (data) {
-            return data.symbol
-        });
-/*
-    let stockNameFisrtLetter = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
-    _.map(stockNameFisrtLetter, function (data) {
-        if (!(fs.existsSync(date + '/' + data + '/'))) {
-            mkdirp(date + '/' + data + '/', function (err) {
-                if (err) console.error(err)
-                else console.log(data + ' folder is created')
+//requesting for Stock list
+request(allStocks, function (error, res, body) {
+    if (!error && res.statusCode == 200) {
+        console.log("\tGrabbing and extracting the Stocks from API");
+        collection = _.map(_.filter(body, function (data) {
+            return data['type'] !== 'et' && data['type'] !== 'N/A';
+        }),
+            function (data) {
+                return data.symbol
             });
-        }
-
-    });
-*/
-
-    console.log("\tSaved on disk:", Object.keys(savedSymbols).length)
-    console.log("\tTo load:", collection.length)
-
-    var interval = setInterval(() => {
-        count(collection.pop())
-        if (collection.length == 0) {
-            console.log(">>>>>>>>>>>>>ALL DONE!!!!<<<<<<<<<<<")
-            console.log("exit in 3 seconds")
-            setTimeout(()=>{
-                console.log("Buy")
-                process.exit()
-            }, 3)
-            clearInterval(interval)
-        }
-    }, 100)
-/*
-    for (x = 0; x < collection.length; x++) {
-        count(collection[x]);
-    }
-*/
+        //Going through Array Stock list removing by one (.pop()) and sending to count function
+        var interval = setInterval(function () {
+            count(collection.pop());
+            if (collection.length == 0) {
+                console.log('\ttask was done!');           
+                clearInterval(interval);
+            }
+        }, 100);
+    } else console.log("Something wrong with API " + error)
 });
 
+//main function 
 function count(collection) {
+    //requesting Finviz website to scrap Stock info
     request('https://finviz.com/quote.ashx?t=' + collection, (error, res, html) => {
-        console.log(collection + ' Stock in action')
-        if (error) {
-            console.log(collection + ' ERROR')
-            console.log(error)
-            return
-        }
-
-        if (res.statusCode != 200) {
-            console.log(collection + ' Response is' + res.statusCode)
-            return
-        }
-
+        if (!error && res.statusCode == 200) {
+            console.log(collection + ' Stock in action')
             const $ = cheerio.load(html);
 
-            // let stockNameFisrtLetterTemp = collection.charAt(0);
-            console.log('Collecting info')
+            //scrapping infromation from website and save it to the arrays
             $('.table-dark-row .snapshot-td2-cp').each((i, el) => {
                 key[i] = $(el).text();
-
             });
             $('.table-dark-row .snapshot-td2').each((i, el) => {
                 data[i] = $(el).text();
-
             });
+            //Temp array that save the current info from the Stock
             var jsonFile = {};
-
+            //Saving data to Array with index created by key array
             for (i = 0; i < key.length; i++) {
                 jsonFile[key[i]] = data[i];
             }
 
-            var symbolDir = getStockDir(collection);
-            createIfNotExists(symbolDir)
+            //passing the Path to the dirCheck function to check if Symfol Dirs are existing if not create 'em
+            dirCheck(path.join('data', date, symbol(collection)));
 
-            var symbolPath = path.join(symbolDir, collection + '.json');
+            //Variable that saves current Path fro futher checking in fileCreator function
+            var dirPath = path.join('data', date, symbol(collection), collection + '.json');
 
-            fs.writeFile(symbolPath, JSON.stringify(jsonFile), function (err) {
-                console.log('\t\t' + symbolPath + ' file saved')
-                if (err) throw err;
-            })
+            //Passing the Path, Stock Symbol, Grabbed Info from Finviz
+            fileCreator(dirPath, collection, jsonFile);
 
-            /*
-            bigData[collection] = jsonFile;
+        } else console.log('\t' + collection + 'Stock not exist in Finviz')
 
-
-
-            counter++;
-            console.log(counter);
-            if (counter == 7553) { starto() }
-
-            function starto() {
-
-                _.mapObject(bigData, function (val, key) {
-                    console.log('\t Writing the file! ' + key);
-                     fs.writeFile(date + '/' + key.charAt(0) +'/'+key+ '.json', val, function (err) {
-
-                        console.log('\t\t'+key+ 'file saved')
-                        if (err) throw err;
-
-                    }); 
-
-                })
-
-
-            }*/
     }
     )
 
 }
 
+//Symbol checker
+var symbol = function (symbolExtractor) {
+    var symbolPath = symbolExtractor.charAt(0);    
+    return symbolPath;
+}
 
+//creating Directories
+var dirCheck = function (fileSymbol) {
+    if (!(fs.existsSync(fileSymbol))) {
+        console.log('dirCheck ' + fileSymbol);
+        fs.mkdirsSync(fileSymbol, function (err) {
+            if (err) console.error(err)
+            else console.log('\t\t' + fileSymbol + ' folder is created')
+        });
 
+    } else (console.log(fileSymbol + ' Directory exist'))
+}
 
+//Creating Files
+var fileCreator = function (dirPath, collection, jsonFile) {
+    if (!(fs.existsSync(dirPath))) {
 
-/* getIextrading.getIextrading(function (stocks) {
-    console.log('rendering the page')
-    res.render('main', { allStocks: stocks }, console.log("page is loaded"));
-}) */
+        console.log('\t Writing the file! ' + collection);
+        fs.writeFile(dirPath, JSON.stringify(jsonFile), function (err) {
+            console.log('\t\t' + collection + ' file saved')
+            if (err) throw err;
 
-/* app.get('/', (req, res) => {
+        });
 
-    res.render('index',console.log('Get page is loadd'))
+    } else (console.log(collection + 'File exist'))
 
-}); */
-
+}
