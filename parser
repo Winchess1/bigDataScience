@@ -1,96 +1,43 @@
+const dateFormat = require('dateformat');
 const request = require('request');
-const fs = require('fs-extra');
-var dateFormat = require('dateformat');
-const _ = require('underscore');
 const mkdirp = require('mkdirp');
 const path = require('path');
-var date = dateFormat(new Date(), "yyyymmdd");
+const fs = require('fs-extra');
+const _ = require('underscore');
+const date = dateFormat(new Date(), "yyyymmdd");
 const cheerio = require('cheerio');
-var folders = [];
 
-/* 
-Check the repositories
-Get a first stock
-Parser to array
-
-*/
-const genPath = path.join(__dirname, 'data', date);
-
-var step1 = function () {
-    fs.readdir(genPath, (err, directorys) => {
-        directorys.forEach((file, i) => {
-            folders.push(path.join(genPath, file));
-        });
+// Function that reads the Data folder to find any subfolders that contains the files
+function directoryCollector() {
+    //path to the Data folder
+    const genPath = path.join(__dirname, 'data', date);
+    var folders = [];
+    var directorys = fs.readdirSync(genPath);
+    //saving the folders to the array
+    directorys.forEach((file, i) => {
+        folders.push(path.join(genPath, file));
     });
-    
+    return folders;
+
 }
 
-var step2 = function (path) {
-    //folders2[folders[i]] = new Array(); 1
-   
-    fs.readdir(path, (err, files) => {
-       // console.log(files);
-          folders[path] = _.map(files, function (num, key) {
-         //   console.log(folders);
-            return num;
-        })    
-        
+// Function that reads all Stock files and create big object. 
+function namedCollector() {
+    const dirCollect = directoryCollector();
+    var dirFullPath = [];
+    //saving the Stock files to the big object.
+     _.forEach(dirCollect, function (file) {      
+        dirFullPath[file] =fs.readdirSync(file);         
     });
-    
-}
+    return dirFullPath  ;
+};
 
-var interval = setInterval(function () {
-    step2(folders.shift());   
-    switch(folders.length){
-        case 0:
-        clearInterval(interval);
-        console.log('\ttask was done!');
-        console.log(typeof(folders));
-        step3 (folders);
-        break;
-    }
+// Temp file just to take a look at JSOn in the file
+(function tempJSON(){
+var temp = namedCollector();
+console.log(temp);
+    fs.writeFileSync('./resto.json',temp);
 
-}, 100);
+})();
+// !!!!!!!!!!!!! не сохраняет данные в файл!!!!!!!!!!!!!!!!!!!!!!
 
-step3 = function (folders) {  
-    async function example () {
-        try {
-          await fs.writeJson('./package.json',folders)
-          console.log('success!')
-        } catch (err) {
-          console.error(err)
-        }
-      }
-      
-      example()
- 
-/*   fs.writeJson('./rest.json',folders, function (err) {
-        console.log('\t\t file saved')
-        if (err) throw err;
-
-    }); */
-}
-
-
-
-
-/*   step3(folders2); 
-
-  var step3 = function(folders2){
-  for(var i = 0;i<2;i++){
-    folders[folders[i]]=folders2[i];
-  }
-
-  console.log(folders); 
-  } */
-/* var step2 = function(){
-  fs.readdir(folders[0], (err, files) => {
-    files.forEach((file)=> {      
-        folders[0].push(file);        
-    });
-    console.log(folders);
-  });
-
-} */
-
-step1();
