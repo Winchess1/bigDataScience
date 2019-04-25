@@ -10,6 +10,8 @@ var walk = require('walk');
 // const callback = require('./index2.js');
 
 const port = process.env.PORT || 3000;
+const data_path = process.env.DATAPATH || 'data';
+
 app.listen(port, console.log('server up'));
 
 app.set('view engine', 'ejs');
@@ -64,7 +66,7 @@ function createIfNotExists(dir) {
 // helper function
 function getStockDir(symbol) {
     var letter = symbol[0].toLowerCase()
-    return path.join('data', date, letter);
+    return path.join(data_path, date, letter);
 }
 
 // helper function
@@ -82,7 +84,7 @@ function getListOfSymbols(pathDir) {
 }
 
 request(allStocks, function (error, response, body) {
-    savedSymbols = getListOfSymbols(path.join('data', date));
+    savedSymbols = getListOfSymbols(path.join(data_path, date));
     console.log("\tgrabbing and extracting the Stocks from API");
     collection = _.map(_.filter(body, function (data) {
 
