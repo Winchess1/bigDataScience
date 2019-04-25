@@ -1,2 +1,2 @@
-export DATAPATH="../finviz_data/"
+export DATAPATH="../finviz_data/data/"
 node index.js
