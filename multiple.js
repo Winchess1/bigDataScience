@@ -11,11 +11,11 @@ const app = express();
 var collector = [];
 const port = process.env.PORT || 3000;
 var server = app.listen(port,console.log('server up'));
+app.set('view engine', 'ejs');
 
-app.get('/',(req,res)=>{
-    app.set('view engine', 'ejs');
-res.render('index.ejs',{mainArray:mainArray});
-
+app.get('/',(req,res)=>{    
+    console.log(fileCreator());
+res.render('index.ejs',{mainArray:fileCreator()});
 })
 
 
@@ -166,8 +166,9 @@ var fileCreator = function (jsonFile) {
                 mainArray[key] = val;
             })
         })
-        console.log(mainArray);
+      //  console.log(mainArray);
         sorter(mainArray);
+        return mainArray;
     }
 
 }
