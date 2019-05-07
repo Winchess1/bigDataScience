@@ -38,7 +38,7 @@ function analyze() {
     //Crating the some kind of constructors
     for (const key of Object.keys(JSON.parse(fs.readFileSync(dirFullPath[0])))) {
         statisticVar[key] = [];
-        statisticCount[key] = [];
+        statisticCount[key] = 0;
     }
 
     console.log('Reading the files and collecting information');
@@ -105,10 +105,13 @@ function analyze() {
         //Return only uniq Values without duplicates
         statisticVar[key] = _.uniq(statisticVar[key]);
     }
-    console.log(statisticVar)
+    
     //Passing result to the file
+    console.log('Saving results for SQL Db')
     saveResultVar(statisticVar);
-    saveResult(statisticCount);
+
+    console.log('Saving results amount of values')
+    savestatisticCount(statisticCount);
 }
 analyze();
 //Saving the result for SQL formats
@@ -117,7 +120,7 @@ function saveResultVar(statisticVar) {
     console.log('StatisticVar Finished')
 }
 //Saving the result for amount of values for each Item
-function statisticCount(statisticCount) {
+function savestatisticCount(statisticCount) {
     fs.writeFileSync('./statisticCount.json', JSON.stringify(statisticCount));
     console.log('StatisticCountFinished')
 }
