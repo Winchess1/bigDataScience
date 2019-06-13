@@ -3,35 +3,34 @@ const path = require('path');
 const fs = require('fs-extra');
 const _ = require('underscore');
 const date = dateFormat(new Date(), "yyyymmdd");
+const data_path = process.env.DATAPATH || path.join(__dirname, 'data');
+const statistics_var_path = path.join(process.env.OUTPATH || __dirname, 'statisticVar.json');
+const statistics_count_path = path.join(process.env.OUTPATH || __dirname, 'statisticCount.json');
 
 // Function that reads the Data folder to find any subfolders that contains the files
-function directoryCollector() {
-    console.log('Reading the files and colecting the Statistic')
-    //path to the Data folder
-    const genPath = path.join(__dirname, 'data', date);
-    var folders = [];
-    var dirFullPath = [];
-
-    var directorys = fs.readdirSync(genPath);
-    //saving the folders to the array
-    directorys.forEach((file) => {
-        folders.push(path.join(genPath, file));
-
-    });
-    folders.forEach((dir) => {
-        filePath = fs.readdirSync(dir)
-        filePath.forEach((file) => {
-            dirFullPath.push(path.join(dir, file));
+function directoryCollector(genPath) {
+    console.log(genPath)
+    var walkSync = function (dir, filelist) {
+        var path = path || require('path');
+        var fs = fs || require('fs'),
+            files = fs.readdirSync(dir);
+        filelist = filelist || [];
+        files.forEach(function (file) {
+            if (fs.statSync(path.join(dir, file)).isDirectory()) {
+                filelist = walkSync(path.join(dir, file), filelist);
+            }
+            else {
+                filelist.push(dir + '/' + file);
+            }
         });
-    });
-
-    //saving the Stock files to the big object.
-    return dirFullPath;
+        return filelist;
+    };
+    return walkSync(genPath);
 }
 
 //Filter that will scan everythin and calculate most value items
-function analyze() {
-    var dirFullPath = directoryCollector();
+function analyze(data_path) {
+    var dirFullPath = directoryCollector(data_path);
     //Variable that stores the results
     var statisticVar = {};
     var statisticCount = {};
@@ -46,18 +45,23 @@ function analyze() {
     dirFullPath.forEach((filePath) => {
         console.log('\t\t' + filePath);
         //reading all paths
-        let fileToCheck = JSON.parse(fs.readFileSync(filePath));
-        //Count amount of values for each position
-        _.mapObject(fileToCheck, (val, key) => {
-            if (val != '-') {
-                statisticCount[key] = statisticCount[key] + 1;
-            }
-        });
-        //Push all values to the constructor
-        _.mapObject(fileToCheck, (val, key) => {
-            statisticVar[key].push(val);
-        });
+        try {
 
+            let fileToCheck = JSON.parse(fs.readFileSync(filePath));
+
+            //Count amount of values for each position
+            _.mapObject(fileToCheck, (val, key) => {
+                if (val != '-') {
+                    statisticCount[key] = statisticCount[key] + 1;
+                }
+            });
+            //Push all values to the constructor
+            _.mapObject(fileToCheck, (val, key) => {
+                statisticVar[key].push(val);
+            });
+        } catch (error) {
+            return
+        }
     });
 
     for (key in statisticVar) {
@@ -105,7 +109,7 @@ function analyze() {
         //Return only uniq Values without duplicates
         statisticVar[key] = _.uniq(statisticVar[key]);
     }
-    
+
     //Passing result to the file
     console.log('Saving results for SQL Db')
     saveResultVar(statisticVar);
@@ -113,15 +117,15 @@ function analyze() {
     console.log('Saving results amount of values')
     savestatisticCount(statisticCount);
 }
-analyze();
+analyze(path.join(data_path));
 //Saving the result for SQL formats
 function saveResultVar(statisticVar) {
-    fs.writeFileSync('./statisticVar.json', JSON.stringify(statisticVar));
+    fs.writeFileSync(statistics_var_path, JSON.stringify(statisticVar, space = 4));
     console.log('StatisticVar Finished')
 }
 //Saving the result for amount of values for each Item
 function savestatisticCount(statisticCount) {
-    fs.writeFileSync('./statisticCount.json', JSON.stringify(statisticCount));
+    fs.writeFileSync(statistics_count_path, JSON.stringify(statisticCount, space = 4));
     console.log('StatisticCountFinished')
 }
 
